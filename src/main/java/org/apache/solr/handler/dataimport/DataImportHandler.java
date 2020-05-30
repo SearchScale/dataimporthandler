@@ -119,6 +119,10 @@ public class DataImportHandler extends RequestHandlerBase implements
   @SuppressWarnings("unchecked")
   public void handleRequestBody(SolrQueryRequest req, SolrQueryResponse rsp)
           throws Exception {
+
+    if (importer == null) { // hack for the case where inform(core) was not called
+      inform(req.getCore());
+    }
     rsp.setHttpCaching(false);
     
     //TODO: figure out why just the first one is OK...

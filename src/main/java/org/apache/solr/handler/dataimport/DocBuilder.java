@@ -920,7 +920,7 @@ public class DocBuilder {
   }
 
   @SuppressWarnings("unchecked")
-  static Class loadClass(String name, SolrCore core) throws ClassNotFoundException {
+/*  static Class loadClass(String name, SolrCore core) throws ClassNotFoundException {
     try {
       return core != null ?
               core.getResourceLoader().findClass(name, Object.class) :
@@ -935,7 +935,22 @@ public class DocBuilder {
         throw new ClassNotFoundException("Unable to load " + name + " or " + DocBuilder.class.getPackage().getName() + "." + name, e);
       }
     }
+  }*/
+
+  static Class loadClass(String name, SolrCore core) throws ClassNotFoundException {
+    try {
+      return DocBuilder.class.getClassLoader().loadClass(name);
+    } catch (Exception e) {
+      try {
+        String n = DocBuilder.class.getPackage().getName() + "." + name;
+        return DocBuilder.class.getClassLoader().loadClass(n);
+      } catch (Exception e1) {
+        throw new ClassNotFoundException("Unable to load " + name + " or " + DocBuilder.class.getPackage().getName() + "." + name, e);
+      }
+    }
   }
+
+
 
   public static class Statistics {
     public AtomicLong docCount = new AtomicLong();

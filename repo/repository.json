@@ -1,0 +1,51 @@
+[
+    {
+      "name": "data-import-handler",
+      "description": "A utility to import documents from a database system using Solr",
+      "versions": [
+        {
+          "version": "8.5.2-1",
+          "date": "2020-05-30",
+          "artifacts": [
+            {
+              "url": "data-import-handler-8.5.2-1.jar",
+              "sig": "dosCuZdk+PkfTs1/Woo5lFwA8mA3kUwcZuOk76keEddI10TriTmzafnNYMetNW8FlFd6FTsK36PSm8DHelNjMw=="
+            },
+            {
+              "url": "mariadb-java-client-2.6.0.jar",
+              "sig": "vJ6i8R0FOXIRznGYvCMNr6y/KdiAzLSVgFZ3zFmlxIE6mGd7VmkzTz5L9BANOt3JDTo5OMhkGmYDEmg4GNekkA=="
+            }
+          ],
+          "manifest": {
+              "version-constraint": "8.5",
+              "plugins": [
+                {
+                  "name": "request-handler",
+                  "setup-command": {
+                    "path": "/api/collections/${collection}/config",
+                    "payload": {"add-requesthandler": {"name": "${RH-HANDLER-PATH}", "class": "data-import-handler:org.apache.solr.handler.dataimport.DataImportHandler", "defaults": {"config": "data-config.xml"} } },
+                    "method": "POST"
+                  },
+                  "uninstall-command": {
+                    "path": "/api/collections/${collection}/config",
+                    "payload": {"delete-requesthandler": "${RH-HANDLER-PATH}"},
+                    "method": "POST"
+                  },
+                  "verify-command": {
+                    "path": "/api/collections/${collection}/config/requestHandler?componentName=${RH-HANDLER-PATH}&meta=true",
+                    "method": "GET",
+                    "condition": "$['config'].['requestHandler'].['${RH-HANDLER-PATH}'].['_packageinfo_'].['version']",
+                    "expected": "${package-version}"
+                  }
+                }
+              ],
+              "parameter-defaults": {
+                "RH-HANDLER-PATH": "/dataimport"
+              }
+          }        
+        }
+      ]
+    }
+  ]
+  
+  
