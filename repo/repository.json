@@ -4,20 +4,20 @@
       "description": "A utility to import documents from a database system using Solr",
       "versions": [
         {
-          "version": "8.5.2-1",
-          "date": "2020-05-30",
+          "version": "8.6.0",
+          "date": "2020-07-02",
           "artifacts": [
             {
-              "url": "data-import-handler-8.5.2-1.jar",
-              "sig": "dosCuZdk+PkfTs1/Woo5lFwA8mA3kUwcZuOk76keEddI10TriTmzafnNYMetNW8FlFd6FTsK36PSm8DHelNjMw=="
+              "url": "data-import-handler-8.6.0.jar",
+              "sig": "mH6VVyBu0TQ3oIDH01FSVHzI0lAPI7+Eu4TtdFtV+JtYfC7LFKRs0nyiWE1Gs2U/L9dXm5/At08jkG0CgASN2A=="
             },
             {
               "url": "mariadb-java-client-2.6.0.jar",
-              "sig": "vJ6i8R0FOXIRznGYvCMNr6y/KdiAzLSVgFZ3zFmlxIE6mGd7VmkzTz5L9BANOt3JDTo5OMhkGmYDEmg4GNekkA=="
+              "sig": "SfYkFEkpqNfytOeGYNTSB0VD1sNLvTFQR9oCRv+e2y6GzawaZHBGo+9nKrZJ/4MUDVxQLfOiyaEJyQOI8Y+L7A=="
             }
           ],
           "manifest": {
-              "version-constraint": "8.5",
+              "version-constraint": "8.6",
               "plugins": [
                 {
                   "name": "request-handler",
