@@ -3,13 +3,13 @@ A Solr package for importing records from database systems into Apache Solr coll
 
 ## Installing and running
 
-* Start Solr (version 8.5.2) nodes with -Denable.packages=true
+* Start Solr (version 8.6.0) nodes with -Denable.packages=true
 
     `bin/solr -c -Denable.packages=true`
 
 * Add repository:
 
-    `bin/solr package add-repo rohit-dataimporthandler "https://raw.githubusercontent.com/chatman/dataimporthandler/branch_8_5/repo/"`
+    `bin/solr package add-repo data-import-handler "bin/solr package add-repo data-import-handler "https://raw.githubusercontent.com/rohitbemax/dataimporthandler/master/repo/"
 
 * See available packages:
 
@@ -43,6 +43,7 @@ A Solr package for importing records from database systems into Apache Solr coll
 * Add the configurations and reload the collection
 
     `./server/scripts/cloud-scripts/zkcli.sh -z localhost:9983 -cmd putfile "/configs/products.AUTOCREATED/data-config.xml" data-config.xml`
+
     `curl "localhost:8983/solr/admin/collections?action=RELOAD&name=products"`
 
 * Run data import
