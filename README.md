@@ -58,3 +58,9 @@ A Solr package for importing records from database systems into Apache Solr coll
 * Only MariaDB connector supported right now. The connectors to be used need to be shipped as part of this package, and currently only MariaDB connector is shipped.
 
 * Solr Admin UI's Dataimport tab could be a bit glitchy when used with this package
+
+## Attribution
+
+The code in this repository was originally a fork of [the original DIH code in Solr project](https://github.com/apache/lucene-solr/tree/branch_8_6/solr/contrib/dataimporthandler) and the original code is (C) Apache Software Foundation.
+
+Additional work done in this repository is (C) the respective authors and licensed under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
