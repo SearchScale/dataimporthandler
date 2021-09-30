@@ -1,5 +1,13 @@
 # Data Import Handler
-A Solr package for importing records from database systems into Apache Solr collections.
+An Apache Solr™ package for importing records from database systems into Apache Solr collections.
+
+![DIH Build](https://github.com/rohitbemax/dataimporthandler/workflows/DIH%20CI/badge.svg)
+
+## About
+
+This is a 3rd party package for Apache Solr, aiming at maintaining the [Data Import Handler](https://lucene.apache.org/solr/guide/8_6/uploading-structured-data-store-data-with-the-data-import-handler.html) since it will no longer ship with the default Solr download in the future. 
+
+The success of this project relies on contributions from the broader community through Pull Requests. See "Issues" sections and help in any way you see fit.
 
 ## Installing and running
 
