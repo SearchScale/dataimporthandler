@@ -60,10 +60,13 @@ The success of this project relies on contributions from the broader community t
 
     `curl "http://localhost:8983/solr/products/select?q=*:*"`
 
+## Contributing
+
+The source code for DIH versions that are compatible with Solr 8.x are in branch_8x branch (branch_9x for Solr 9.x). Please feel free to open issues and/or open pull requests against that branch.
 
 ## Known Issues
 
-* Only MariaDB connector supported right now. The connectors to be used need to be shipped as part of this package, and currently only MariaDB connector is shipped.
+* Only MariaDB connector supported out-of-the-box right now. The connectors to be used need to be shipped as part of this package, and currently only MariaDB connector is shipped.
 
 * Solr Admin UI's Dataimport tab could be a bit glitchy when used with this package
 
