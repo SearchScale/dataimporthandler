@@ -64,7 +64,7 @@ public class TestSqlEntityProcessor extends AbstractSqlEntityProcessorTestCase {
     withChildEntities(true, true);
   }
   
-  @Test(expected=RuntimeException.class /* DIH exceptions are not propagated, here we capturing assertQ exceptions */)
+  @Test(expected=AssertionError.class /* DIH exceptions are not propagated, here we capturing assertQ exceptions */)
   public void testSportZipperChildEntitiesWrongOrder() throws Exception {
     if(random().nextBoolean()){
       wrongPeopleOrder = true;
@@ -74,7 +74,7 @@ public class TestSqlEntityProcessor extends AbstractSqlEntityProcessorTestCase {
     testSportZipperChildEntities();
   }
 
-  @Test(expected=RuntimeException.class )
+  @Test(expected=AssertionError.class )
   public void testCountryZipperChildEntitiesWrongOrder() throws Exception {
     if(random().nextBoolean()){
       wrongPeopleOrder = true;
@@ -84,7 +84,7 @@ public class TestSqlEntityProcessor extends AbstractSqlEntityProcessorTestCase {
     testCountryZipperChildEntities();
   }
   
-  @Test(expected=RuntimeException.class)
+  @Test(expected=AssertionError.class)
   public void testBothZipperChildEntitiesWrongOrder() throws Exception {
     if(random().nextBoolean()){
       wrongPeopleOrder = true;
