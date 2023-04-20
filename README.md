@@ -11,13 +11,13 @@ The success of this project relies on contributions from the broader community t
 
 ## Installing and running
 
-* Start Solr (version 8.X master) nodes with -Denable.packages=true
+* Start Solr (version 9.X master) nodes with -Denable.packages=true
 
     `bin/solr -c -Denable.packages=true`
 
 * Add repository:
 
-    `bin/solr package add-repo data-import-handler "https://raw.githubusercontent.com/rohitbemax/dataimporthandler/master/repo/"`
+    `bin/solr package add-repo data-import-handler "https://raw.githubusercontent.com/searchscale/dataimporthandler/master/repo/"`
 
 * See available packages:
 
