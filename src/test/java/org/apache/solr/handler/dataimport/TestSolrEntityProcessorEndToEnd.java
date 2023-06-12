@@ -32,7 +32,7 @@ import java.util.Properties;
 import org.apache.commons.io.FileUtils;
 import org.apache.lucene.util.IOUtils;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.embedded.JettySolrRunner;
+import org.apache.solr.embedded.JettySolrRunner;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.common.SolrInputDocument;
 import org.junit.After;
@@ -46,19 +46,19 @@ import org.slf4j.LoggerFactory;
  * End-to-end test of SolrEntityProcessor. "Real" test using embedded Solr
  */
 public class TestSolrEntityProcessorEndToEnd extends AbstractDataImportHandlerTestCase {
-  
+
   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
-  
+
   private static final String SOLR_CONFIG = "dataimport-solrconfig.xml";
   private static final String SOLR_SCHEMA = "dataimport-schema.xml";
   private static final String SOURCE_CONF_DIR = "dih" + File.separator + "solr" + File.separator + "collection1" + File.separator + "conf" + File.separator;
   private static final String ROOT_DIR = "dih" + File.separator + "solr" + File.separator;
 
   private static final String DEAD_SOLR_SERVER = "http://" + DEAD_HOST_1 + "/solr";
-  
+
   private static final List<Map<String,Object>> DB_DOCS = new ArrayList<>();
   private static final List<Map<String,Object>> SOLR_DOCS = new ArrayList<>();
-  
+
   static {
     // dynamic fields in the destination schema
     Map<String,Object> dbDoc = new HashMap<>();
@@ -72,10 +72,10 @@ public class TestSolrEntityProcessorEndToEnd extends AbstractDataImportHandlerTe
     SOLR_DOCS.add(solrDoc);
   }
 
-  
+
   private SolrInstance instance = null;
   private JettySolrRunner jetty;
-  
+
   private String getDihConfigTagsInnerEntity() {
     return  "<dataConfig>\r\n"
         + "  <dataSource type='MockDataSource' />\r\n"
@@ -89,18 +89,18 @@ public class TestSolrEntityProcessorEndToEnd extends AbstractDataImportHandlerTe
         + "        <field column='desc' />\r\n" + "      </entity>\r\n"
         + "    </entity>\r\n" + "  </document>\r\n" + "</dataConfig>\r\n";
   }
-  
+
   private String generateDIHConfig(String options, boolean useDeadServer) {
     return "<dataConfig>\r\n" + "  <document>\r\n"
         + "    <entity name='se' processor='SolrEntityProcessor'" + "   url='"
         + (useDeadServer ? DEAD_SOLR_SERVER : getSourceUrl()) + "' " + options + " />\r\n" + "  </document>\r\n"
         + "</dataConfig>\r\n";
   }
-  
+
   private String getSourceUrl() {
     return buildUrl(jetty.getLocalPort(), "/solr/collection1");
   }
-  
+
   //TODO: fix this test to close its directories
   static String savedFactory;
   @BeforeClass
@@ -108,7 +108,7 @@ public class TestSolrEntityProcessorEndToEnd extends AbstractDataImportHandlerTe
     savedFactory = System.getProperty("solr.DirectoryFactory");
     System.setProperty("solr.directoryFactory", "solr.StandardDirectoryFactory");
   }
-  
+
   @AfterClass
   public static void afterClass() {
     if (savedFactory == null) {
@@ -129,7 +129,7 @@ public class TestSolrEntityProcessorEndToEnd extends AbstractDataImportHandlerTe
     instance.setUp();
     jetty = createAndStartJetty(instance);
   }
-  
+
   @Override
   @After
   public void tearDown() throws Exception {
@@ -152,7 +152,7 @@ public class TestSolrEntityProcessorEndToEnd extends AbstractDataImportHandlerTe
   //commented 23-AUG-2018  @BadApple(bugUrl="https://issues.apache.org/jira/browse/SOLR-12028") // added 20-Jul-2018
   public void testFullImport() {
     assertQ(req("*:*"), "//result[@numFound='0']");
-    
+
     try {
       addDocumentsToSolr(SOLR_DOCS);
       runFullImport(generateDIHConfig("query='*:*' rows='2' fl='id,desc' onError='skip'", false));
@@ -160,15 +160,15 @@ public class TestSolrEntityProcessorEndToEnd extends AbstractDataImportHandlerTe
       log.error(e.getMessage(), e);
       fail(e.getMessage());
     }
-    
+
     assertQ(req("*:*"), "//result[@numFound='1']");
     assertQ(req("id:1"), "//result/doc/str[@name='id'][.='1']",
         "//result/doc/arr[@name='desc'][.='SolrDescription']");
   }
-  
+
   public void testFullImportFqParam() {
     assertQ(req("*:*"), "//result[@numFound='0']");
-    
+
     try {
       addDocumentsToSolr(generateSolrDocuments(30));
       Map<String,String> map = new HashMap<>();
@@ -178,14 +178,14 @@ public class TestSolrEntityProcessorEndToEnd extends AbstractDataImportHandlerTe
       log.error(e.getMessage(), e);
       fail(e.getMessage());
     }
-    
+
     assertQ(req("*:*"), "//result[@numFound='1']");
     assertQ(req("id:12"), "//result[@numFound='1']", "//result/doc/arr[@name='desc'][.='Description12']");
   }
-  
+
   public void testFullImportFieldsParam() {
     assertQ(req("*:*"), "//result[@numFound='0']");
-    
+
     try {
       addDocumentsToSolr(generateSolrDocuments(7));
       runFullImport(generateDIHConfig("query='*:*' fl='id' rows='2'"+(random().nextBoolean() ?" cursorMark='true' sort='id asc'":""), false));
@@ -193,18 +193,18 @@ public class TestSolrEntityProcessorEndToEnd extends AbstractDataImportHandlerTe
       log.error(e.getMessage(), e);
       fail(e.getMessage());
     }
-    
+
     assertQ(req("*:*"), "//result[@numFound='7']");
     assertQ(req("id:1"), "//result[@numFound='1']");
     assertQ(req("id:1"), "count(//result/doc/arr[@name='desc'])=0");
   }
-  
+
   /**
    * Receive a row from SQL (Mock) and fetch a row from Solr
    */
   public void testFullImportInnerEntity() {
     assertQ(req("*:*"), "//result[@numFound='0']");
-    
+
     try {
       List<Map<String,Object>> DOCS = new ArrayList<>(DB_DOCS);
       Map<String, Object> doc = new HashMap<>();
@@ -226,7 +226,7 @@ public class TestSolrEntityProcessorEndToEnd extends AbstractDataImportHandlerTe
     } finally {
       MockDataSource.clearCache();
     }
-    
+
     assertQ(req("*:*"), "//result[@numFound='2']");
     assertQ(req("id:1"), "//result/doc/str[@name='id'][.='1']",
         "//result/doc/str[@name='dbdesc_s'][.='DbDescription']",
@@ -237,23 +237,23 @@ public class TestSolrEntityProcessorEndToEnd extends AbstractDataImportHandlerTe
         "//result/doc/str[@name='dbid_s'][.='2']",
         "//result/doc/arr[@name='desc'][.='SolrDescription2']");
   }
-  
+
   public void testFullImportWrongSolrUrl() {
     assertQ(req("*:*"), "//result[@numFound='0']");
-    
+
     try {
       runFullImport(generateDIHConfig("query='*:*' rows='2' fl='id,desc' onError='skip'", true /* use dead server */));
     } catch (Exception e) {
       log.error(e.getMessage(), e);
       fail(e.getMessage());
     }
-    
+
     assertQ(req("*:*"), "//result[@numFound='0']");
   }
-  
+
   public void testFullImportBadConfig() {
     assertQ(req("*:*"), "//result[@numFound='0']");
-    
+
     try {
       runFullImport(generateDIHConfig("query='bogus:3' rows='2' fl='id,desc' onError='"+
             (random().nextBoolean() ? "abort" : "justtogetcoverage")+"'", false));
@@ -261,14 +261,14 @@ public class TestSolrEntityProcessorEndToEnd extends AbstractDataImportHandlerTe
       log.error(e.getMessage(), e);
       fail(e.getMessage());
     }
-    
+
     assertQ(req("*:*"), "//result[@numFound='0']");
   }
-  
+
   public void testCursorMarkNoSort() throws SolrServerException, IOException {
     assertQ(req("*:*"), "//result[@numFound='0']");
     addDocumentsToSolr(generateSolrDocuments(7));
-    try {     
+    try {
       List<String> errors = Arrays.asList("sort='id'", //wrong sort spec
           "", //no sort spec
           "sort='id asc' timeout='12345'"); // sort is fine, but set timeout
@@ -281,10 +281,10 @@ public class TestSolrEntityProcessorEndToEnd extends AbstractDataImportHandlerTe
       log.error(e.getMessage(), e);
       fail(e.getMessage());
     }
-    
+
     assertQ(req("*:*"), "//result[@numFound='0']");
   }
-  
+
   private static List<Map<String,Object>> generateSolrDocuments(int num) {
     List<Map<String,Object>> docList = new ArrayList<>();
     for (int i = 1; i <= num; i++) {
@@ -295,7 +295,7 @@ public class TestSolrEntityProcessorEndToEnd extends AbstractDataImportHandlerTe
     }
     return docList;
   }
-  
+
   private void addDocumentsToSolr(List<Map<String,Object>> docs) throws SolrServerException, IOException {
     List<SolrInputDocument> sidl = new ArrayList<>();
     for (Map<String,Object> doc : docs) {
@@ -311,24 +311,24 @@ public class TestSolrEntityProcessorEndToEnd extends AbstractDataImportHandlerTe
       solrServer.commit(true, true);
     }
   }
-  
+
   private static class SolrInstance {
     File homeDir;
     File confDir;
     File dataDir;
-    
+
     public String getHomeDir() {
       return homeDir.toString();
     }
-    
+
     public String getSchemaFile() {
       return SOURCE_CONF_DIR + "dataimport-schema.xml";
     }
-    
+
     public String getDataDir() {
       return dataDir.toString();
     }
-    
+
     public String getSolrConfigFile() {
       return SOURCE_CONF_DIR + "dataimport-solrconfig.xml";
     }
@@ -341,7 +341,7 @@ public class TestSolrEntityProcessorEndToEnd extends AbstractDataImportHandlerTe
       homeDir = createTempDir().toFile();
       dataDir = new File(homeDir + "/collection1", "data");
       confDir = new File(homeDir + "/collection1", "conf");
-      
+
       homeDir.mkdirs();
       dataDir.mkdirs();
       confDir.mkdirs();
@@ -350,7 +350,7 @@ public class TestSolrEntityProcessorEndToEnd extends AbstractDataImportHandlerTe
       File f = new File(confDir, "solrconfig.xml");
       FileUtils.copyFile(getFile(getSolrConfigFile()), f);
       f = new File(confDir, "schema.xml");
-      
+
       FileUtils.copyFile(getFile(getSchemaFile()), f);
       f = new File(confDir, "data-config.xml");
       FileUtils.copyFile(getFile(SOURCE_CONF_DIR + "dataconfig-contentstream.xml"), f);
@@ -362,7 +362,7 @@ public class TestSolrEntityProcessorEndToEnd extends AbstractDataImportHandlerTe
       IOUtils.rm(homeDir.toPath());
     }
   }
-  
+
   private JettySolrRunner createAndStartJetty(SolrInstance instance) throws Exception {
     Properties nodeProperties = new Properties();
     nodeProperties.setProperty("solr.data.dir", instance.getDataDir());
@@ -370,5 +370,5 @@ public class TestSolrEntityProcessorEndToEnd extends AbstractDataImportHandlerTe
     jetty.start();
     return jetty;
   }
-  
+
 }

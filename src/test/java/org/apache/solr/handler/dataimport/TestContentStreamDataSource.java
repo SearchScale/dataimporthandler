@@ -17,7 +17,7 @@
 package org.apache.solr.handler.dataimport;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.solr.client.solrj.embedded.JettySolrRunner;
+import org.apache.solr.embedded.JettySolrRunner;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.request.DirectXmlRequest;
 import org.apache.solr.client.solrj.response.QueryResponse;
@@ -54,7 +54,7 @@ public class TestContentStreamDataSource extends AbstractDataImportHandlerTestCa
     instance.setUp();
     jetty = createAndStartJetty(instance);
   }
-  
+
   @Override
   @After
   public void tearDown() throws Exception {
@@ -88,8 +88,8 @@ public class TestContentStreamDataSource extends AbstractDataImportHandlerTestCa
   @Test
   public void testCommitWithin() throws Exception {
     DirectXmlRequest req = new DirectXmlRequest("/dataimport", xml);
-    ModifiableSolrParams params = params("command", "full-import", 
-        "clean", "false", UpdateParams.COMMIT, "false", 
+    ModifiableSolrParams params = params("command", "full-import",
+        "clean", "false", UpdateParams.COMMIT, "false",
         UpdateParams.COMMIT_WITHIN, "1000");
     req.setParams(params);
     try (HttpSolrClient solrServer = getHttpSolrClient(buildUrl(jetty.getLocalPort(), "/solr/collection1"))) {
@@ -111,14 +111,14 @@ public class TestContentStreamDataSource extends AbstractDataImportHandlerTestCa
     }
     fail("Commit should have occurred but it did not");
   }
-  
+
   private static class SolrInstance {
     String name;
     Integer port;
     File homeDir;
     File confDir;
     File dataDir;
-    
+
     /**
      * if masterPort is null, this instance is a master -- otherwise this instance is a slave, and assumes the master is
      * on localhost at the specified port.
