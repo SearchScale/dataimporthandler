@@ -109,7 +109,7 @@ public class DataImportHandler extends RequestHandlerBase implements
       // some users may have '/' in the handler name. replace with '_'
       myName = myName.replaceAll("/", "_");
       debugEnabled = StrUtils.parseBool((String)initArgs.get(ENABLE_DEBUG), true);
-      importer = new DataImporter(core, myName);         
+      importer = new DataImporter(core, myName);
     } catch (Exception e) {
       log.error( DataImporter.MSG.LOAD_EXP, e);
       throw new SolrException(SolrException.ErrorCode.SERVER_ERROR, DataImporter.MSG.LOAD_EXP, e);
@@ -125,7 +125,7 @@ public class DataImportHandler extends RequestHandlerBase implements
       inform(req.getCore());
     }
     rsp.setHttpCaching(false);
-    
+
     //TODO: figure out why just the first one is OK...
     ContentStream contentStream = null;
     Iterable<ContentStream> streams = req.getContentStreams();
@@ -139,8 +139,8 @@ public class DataImportHandler extends RequestHandlerBase implements
     NamedList defaultParams = (NamedList) initArgs.get("defaults");
     RequestInfo requestParams = new RequestInfo(req, getParamsMap(params), contentStream);
     String command = requestParams.getCommand();
-    
-    if (DataImporter.SHOW_CONF_CMD.equals(command)) {    
+
+    if (DataImporter.SHOW_CONF_CMD.equals(command)) {
       String dataConfigFile = params.get("config");
       String dataConfig = params.get("dataConfig"); // needn't check dataConfigParam_enabled; we don't execute it
       if(dataConfigFile != null) {
@@ -191,7 +191,7 @@ public class DataImportHandler extends RequestHandlerBase implements
         UpdateRequestProcessor processor = processorChain.createProcessor(req, rsp);
         SolrResourceLoader loader = req.getCore().getResourceLoader();
         DIHWriter sw = getSolrWriter(processor, loader, requestParams, req);
-        
+
         if (requestParams.isDebug()) {
           if (debugEnabled) {
             // Synchronous request for the debug mode
@@ -212,7 +212,7 @@ public class DataImportHandler extends RequestHandlerBase implements
             importer.runCmd(requestParams, sw);
           }
         }
-      } else if (DataImporter.RELOAD_CONF_CMD.equals(command)) { 
+      } else if (DataImporter.RELOAD_CONF_CMD.equals(command)) {
         if(importer.maybeReloadConfiguration(requestParams, defaultParams)) {
           message = DataImporter.MSG.CONFIG_RELOADED;
         } else {
@@ -282,7 +282,7 @@ public class DataImportHandler extends RequestHandlerBase implements
   @Override
   public void initializeMetrics(SolrMetricsContext parentContext, String scope) {
     super.initializeMetrics(parentContext, scope);
-    metrics = new MetricsMap((detailed, map) -> {
+    metrics = new MetricsMap((map) -> {
       if (importer != null) {
         DocBuilder.Statistics cumulative = importer.cumulativeStatistics;
 
