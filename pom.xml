@@ -4,7 +4,7 @@
     <groupId>org.apache.solr</groupId>
     <artifactId>data-import-handler</artifactId>
     <packaging>jar</packaging>
-    <version>9.2.1</version>
+    <version>9.3.0</version>
     <name>data-import-handler</name>
 
     <properties>
