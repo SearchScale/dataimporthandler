@@ -29,6 +29,7 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: target/data-import-handler-*.jar
+          files: jdbc-drivers/mariadb-java-client-*.jar
       - name: Sign Jar
         id: sign-jar
         run: |
@@ -36,6 +37,14 @@ jobs:
           ${{ secrets.SOLR_PACKAGE_SIGN_PRIVATE_KEY }}
           EOF
           sig=$(openssl dgst -sha1 -sign private-key.pem target/data-import-handler-*.jar | openssl enc -base64 |  tr -d \\n)
+          echo "sig=$sig" | tee -a $GITHUB_OUTPUT
+      - name: Sign MariaDB Jar
+        id: sign-mariadb
+        run: |
+          cat <<EOF > private-key.pem
+          ${{ secrets.SOLR_PACKAGE_SIGN_PRIVATE_KEY }}
+          EOF
+          sig=$(openssl dgst -sha1 -sign private-key.pem jdbc-drivers/mariadb-java-client-*.jar | openssl enc -base64 |  tr -d \\n)
           echo "sig=$sig" | tee -a $GITHUB_OUTPUT
       - name: Update Repo
         run: |
@@ -45,6 +54,8 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           url=${{ fromJSON(steps.uploaded-assets.outputs.assets)[0].browser_download_url }}
           sig=${{ steps.sign-jar.outputs.sig }}
+          mariadburl=${{ fromJSON(steps.uploaded-assets.outputs.assets)[1].browser_download_url }}
+          mariadb_sig=${{ steps.sign-mariadb.outputs.sig }}
           echo "Signature of new artifacts: $sig"
           jq '.[0].versions[.[0].versions | length] |= . + {
             "version": '"\"${GITHUB_REF_NAME#v}"\"',
@@ -55,8 +66,8 @@ jobs:
                 "sig": '"\"$sig\""'
               },
               {
-                "url": "mariadb-java-client-2.6.0.jar",
-                "sig": "SfYkFEkpqNfytOeGYNTSB0VD1sNLvTFQR9oCRv+e2y6GzawaZHBGo+9nKrZJ/4MUDVxQLfOiyaEJyQOI8Y+L7A=="
+                "url": '"\"$mariadburl\""',
+                "sig": '"\"$mariadb_sig\""'
               }
             ],
             "manifest": {
