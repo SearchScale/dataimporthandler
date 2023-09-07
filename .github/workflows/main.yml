@@ -29,3 +29,35 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: target/data-import-handler-*.jar
+      - name: Sign Jar
+        id: sign-jar
+        run: |
+          cat <<EOF > private-key.pem
+          ${{ secrets.SOLR_PACKAGE_SIGN_PRIVATE_KEY }}
+          EOF
+          sig=$(openssl dgst -sha1 -sign private-key.pem target/data-import-handler-*.jar | openssl enc -base64 |  tr -d \\n)
+          echo "sig=$sig" | tee -a $GITHUB_OUTPUT
+      - name: Update Repo
+        run: |
+          git reset --hard origin/master
+          git pull --rebase origin master
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          url=${{ fromJSON(steps.uploaded-assets.outputs.assets)[0].browser_download_url }}
+          sig=${{ steps.sign-jar.outputs.sig }}
+          echo "Signature of new artifacts: $sig"
+          jq '.[0].versions[.[0].versions | length] |= . + {
+            "version": '"\"${GITHUB_REF_NAME#v}"\"',
+            "date": '"\"$(date +%Y-%m-%d)\""',
+            "artifacts": [
+              {
+                "url": '"\"$url\""',
+                "sig": '"\"$sig\""'
+              }
+            ]
+          }' repo/repository.json | tee repo/repository.json.tmp
+          mv repo/repository.json.tmp repo/repository.json
+
+          git add repo/repository.json **/pom.xml
+          git commit -m "Update repository.json with new release"
+          git push origin HEAD:master
