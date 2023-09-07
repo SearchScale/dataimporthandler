@@ -28,8 +28,9 @@ jobs:
         id: uploaded-assets
         uses: softprops/action-gh-release@v1
         with:
-          files: target/data-import-handler-*.jar
-          files: jdbc-drivers/mariadb-java-client-*.jar
+          files:
+            - target/data-import-handler-*.jar
+            - jdbc-drivers/mariadb-java-client-*.jar
       - name: Sign Jar
         id: sign-jar
         run: |
