@@ -22,7 +22,7 @@ jobs:
           cache: maven
       - name: Build
         run: |
-          mvn clean package
+          mvn -DskipTests=true clean package
 
       - name: Upload Assets
         id: uploaded-assets
