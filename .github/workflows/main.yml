@@ -28,4 +28,4 @@ jobs:
         id: uploaded-assets
         uses: softprops/action-gh-release@v1
         with:
-          files: dataimporthandler/target/data-import-handler-*.jar
+          files: target/data-import-handler-*.jar
