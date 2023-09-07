@@ -60,7 +60,7 @@ jobs:
               }
             ],
             "manifest": {
-              "version-constraint": '"\"${GITHUB_REF_NAME#v}" - 9.2.99\"',
+              "version-constraint": '"\"${GITHUB_REF_NAME#v}"\"',
               "plugins": [
                 {
                   "name": "request-handler",
