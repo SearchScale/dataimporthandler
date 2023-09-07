@@ -1,0 +1,106 @@
+# Publish GitHub workflow artifacts tutorial example
+name: Publish GitHub Actions Artifacts
+
+on:
+  push:
+    tags:
+      - v\d+\.\d+\.\d+
+
+jobs:
+  Release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source codes
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          java-version: 11
+          distribution: temurin
+          cache: maven
+      - name: Build
+        run: |
+          mvn -DskipTests=true clean package
+
+      - name: Upload Assets
+        id: uploaded-assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            target/data-import-handler-*.jar
+            jdbc-drivers/mariadb-java-client-*.jar
+      - name: Sign Jar
+        id: sign-jar
+        run: |
+          cat <<EOF > private-key.pem
+          ${{ secrets.SOLR_PACKAGE_SIGN_PRIVATE_KEY }}
+          EOF
+          sig=$(openssl dgst -sha1 -sign private-key.pem target/data-import-handler-*.jar | openssl enc -base64 |  tr -d \\n)
+          echo "sig=$sig" | tee -a $GITHUB_OUTPUT
+      - name: Sign MariaDB Jar
+        id: sign-mariadb
+        run: |
+          cat <<EOF > private-key.pem
+          ${{ secrets.SOLR_PACKAGE_SIGN_PRIVATE_KEY }}
+          EOF
+          sig=$(openssl dgst -sha1 -sign private-key.pem jdbc-drivers/mariadb-java-client-*.jar | openssl enc -base64 |  tr -d \\n)
+          echo "sig=$sig" | tee -a $GITHUB_OUTPUT
+      - name: Update Repo
+        run: |
+          git reset --hard origin/master
+          git pull --rebase origin master
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          url=${{ fromJSON(steps.uploaded-assets.outputs.assets)[0].browser_download_url }}
+          sig=${{ steps.sign-jar.outputs.sig }}
+          mariadburl=${{ fromJSON(steps.uploaded-assets.outputs.assets)[1].browser_download_url }}
+          mariadb_sig=${{ steps.sign-mariadb.outputs.sig }}
+          echo "Signature of new artifacts: $sig"
+          jq '.[0].versions[.[0].versions | length] |= . + {
+            "version": '"\"${GITHUB_REF_NAME#v}"\"',
+            "date": '"\"$(date +%Y-%m-%d)\""',
+            "artifacts": [
+              {
+                "url": '"\"$url\""',
+                "sig": '"\"$sig\""'
+              },
+              {
+                "url": '"\"$mariadburl\""',
+                "sig": '"\"$mariadb_sig\""'
+              }
+            ],
+            "manifest": {
+              "version-constraint": '"\"${GITHUB_REF_NAME#v}"\"',
+              "plugins": [
+                {
+                  "name": "request-handler",
+                  "setup-command": {
+                    "path": "/api/collections/${collection}/config",
+                    "payload": {"add-requesthandler": {"name": "${RH-HANDLER-PATH}", "class": "data-import-handler:org.apache.solr.handler.dataimport.DataImportHandler", "defaults": {"config": "data-config.xml"} } },
+                    "method": "POST"
+                  },
+                  "uninstall-command": {
+                    "path": "/api/collections/${collection}/config",
+                    "payload": {"delete-requesthandler": "${RH-HANDLER-PATH}"},
+                    "method": "POST"
+                  },
+                  "verify-command": {
+                    "path": "/api/collections/${collection}/config/requestHandler?componentName=${RH-HANDLER-PATH}&meta=true",
+                    "method": "GET",
+                    "condition": "$['config'].['requestHandler'].['${RH-HANDLER-PATH}'].['_packageinfo_'].['version']",
+                    "expected": "${package-version}"
+                  }
+                }
+              ],
+              "parameter-defaults": {
+                "RH-HANDLER-PATH": "/dataimport"
+              }
+            }  
+          }' repo/repository.json | tee repo/repository.json.tmp
+          mv repo/repository.json.tmp repo/repository.json
+
+          git add repo/repository.json
+          git commit -m "Update repository.json with new release"
+          git push origin HEAD:master
