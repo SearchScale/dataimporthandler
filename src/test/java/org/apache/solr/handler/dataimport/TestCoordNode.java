@@ -34,7 +34,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Map;
 
-//@LogLevel("org.apache.solr=DEBUG")
+@LogLevel("org.apache.solr.update.SolrCmdDistributor=DEBUG;org.apache.solr.update.processor.LogUpdateProcessorFactory=DEBUG")
 public class TestCoordNode extends SolrCloudTestCase {
 
     private static final int NUM_NODES = 2;
@@ -69,8 +69,9 @@ public class TestCoordNode extends SolrCloudTestCase {
         GenericSolrRequest dih = new GenericSolrRequest(SolrRequest.METHOD.POST, "/dataimport", new MapSolrParams(
                 Map.of("command","full-import",
                 "synchronous","true",
-                        "destination","data",
-                        "writerImpl",""
+                        "destination-collection","data",
+                        "writerImpl","org.apache.solr.handler.dataimport.SolrCloudWriter",
+                        "clean", "false" // TODO fix delete cmd url as well.
                         //"collection","data" - hell , collection is handled to forward full-import to the coll
                 )));
         dih.withContent(xml.getBytes("UTF-8"),"application/json");

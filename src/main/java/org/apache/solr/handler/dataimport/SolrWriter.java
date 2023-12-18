@@ -45,7 +45,7 @@ public class SolrWriter extends DIHWriterBase implements DIHWriter {
   public static final String LAST_INDEX_KEY = "last_index_time";
 
   private final UpdateRequestProcessor processor;
-  private final int commitWithin;
+  protected final int commitWithin;
   
   SolrQueryRequest req;
 
