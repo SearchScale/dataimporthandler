@@ -70,8 +70,7 @@ public class TestCoordNode extends SolrCloudTestCase {
                 Map.of("command","full-import",
                 "synchronous","true",
                         "destination-collection","data",
-                        "writerImpl","org.apache.solr.handler.dataimport.SolrCloudWriter",
-                        "clean", "false" // TODO fix delete cmd url as well.
+                        "writerImpl","SolrCloudWriter"//org.apache.solr.handler.dataimport.
                         //"collection","data" - hell , collection is handled to forward full-import to the coll
                 )));
         dih.withContent(xml.getBytes("UTF-8"),"application/json");

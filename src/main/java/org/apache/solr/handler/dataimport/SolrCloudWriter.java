@@ -72,11 +72,6 @@ public class SolrCloudWriter extends SolrWriter /*weird but it seems it's worth 
             // can;t manage to commit via SolrCmdDistributor
             // List<SolrCmdDistributor.Node> collectionUrls = getCollectionUrls(destDocColl, EnumSet.of(Replica.Type.TLOG, Replica.Type.NRT), true);
             solrCmdDistributor.blockAndDoRetries();//distribCommit(commit, collectionUrls, new ModifiableSolrParams());
-            /*if (optimize) {
-                updateClient.optimize(destColl);
-            }else {
-                updateClient.commit(destColl);
-            }*/
             String baseUrl = destDocColl.getActiveSlicesArr()[0].getLeader().getBaseUrl();
             UpdateRequest cmt = new UpdateRequest();
             cmt.setAction(optimize ? UpdateRequest.ACTION.OPTIMIZE : UpdateRequest.ACTION.COMMIT, true, true);
