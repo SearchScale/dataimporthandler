@@ -4,7 +4,7 @@
     <groupId>org.apache.solr</groupId>
     <artifactId>data-import-handler</artifactId>
     <packaging>jar</packaging>
-    <version>9.4.0</version>
+    <version>9.5.0</version>
     <name>data-import-handler</name>
 
     <properties>
@@ -13,7 +13,7 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <maven.compiler.release>11</maven.compiler.release>
-        <solr-version>9.4.0</solr-version>
+        <solr-version>9.5.0</solr-version>
     </properties>
 
     <dependencies>
