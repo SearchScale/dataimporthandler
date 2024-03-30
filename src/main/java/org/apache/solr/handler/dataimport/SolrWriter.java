@@ -79,10 +79,9 @@ public class SolrWriter extends DIHWriterBase implements DIHWriter {
       command.commitWithin = commitWithin;
       processor.processAdd(command);
     } catch (Exception e) {
-      log.warn("Error creating document : " + d, e);
+      log.error("Error creating document : " + d, e);
       return false;
     }
-
     return true;
   }
   

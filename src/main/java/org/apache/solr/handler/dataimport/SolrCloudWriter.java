@@ -40,7 +40,9 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.function.Consumer;
 
-public class SolrCloudWriter extends SolrWriter /*weird but it seems it's worth to inherit finish */ {
+
+@SuppressWarnings("unused")
+public class SolrCloudWriter extends SolrWriter { //not sure about ascendant
 
   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
@@ -50,6 +52,7 @@ public class SolrCloudWriter extends SolrWriter /*weird but it seems it's worth 
   private final DocCollection destDocColl;
   private final SolrCmdDistributor solrCmdDistributor;
 
+  @SuppressWarnings("unused")
   public SolrCloudWriter(UpdateRequestProcessor processor, SolrQueryRequest req) {
     super(processor, req);
     updateClient = req.getCoreContainer().getUpdateShardHandler().getUpdateOnlyHttpClient();
@@ -65,33 +68,6 @@ public class SolrCloudWriter extends SolrWriter /*weird but it seems it's worth 
     solrCmdDistributor = new SolrCmdDistributor(req.getCoreContainer().getUpdateShardHandler());
   }
 
-  protected Exception syncThenUpdate(Consumer<UpdateRequest> customizer) {
-    try {
-      solrCmdDistributor.blockAndDoRetries();
-      UpdateRequest cmt = updateAnyLeader();
-      customizer.accept(cmt);
-      cmt.process(updateClient, destColl);
-    } catch (Exception e) {
-      log.error("Error during import: ", e);
-      return e;
-    }
-    return null;
-  }
-
-  @Override
-  public void commit(boolean optimize) {
-    AbstractUpdateRequest.ACTION action = optimize ? UpdateRequest.ACTION.OPTIMIZE : UpdateRequest.ACTION.COMMIT;
-    syncThenUpdate(req -> req.setAction(action, true, true));
-  }
-
-  private UpdateRequest updateAnyLeader() {
-    UpdateRequest cmt = new UpdateRequest();
-    String baseUrl = destDocColl.getActiveSlicesArr()[0].getLeader().getBaseUrl();
-    cmt.setBasePath(baseUrl);
-    return cmt;
-  }
-
-
   @Override
   public void close() {
     try {
@@ -102,35 +78,11 @@ public class SolrCloudWriter extends SolrWriter /*weird but it seems it's worth 
   }
 
   @Override
-  public void rollback() {
-    syncThenUpdate(AbstractUpdateRequest::rollback);
-  }
-
-  @Override
-  public void deleteByQuery(String q) {
-    syncThenUpdate(u -> u.deleteByQuery(q));
-  }
-
-  @Override
-  public void doDeleteAll() {
-    Exception exception = syncThenUpdate(u -> u.deleteByQuery("*:*"));
-    if (exception != null) {
-      throw new DataImportHandlerException(DataImportHandlerException.SEVERE,
-              "Error deleting all docs : ", exception);
-    }
-  }
-
-  @Override
-  public void deleteDoc(Object key) {
-    syncThenUpdate(u -> u.deleteById(key.toString()));
-  }
-
-  @Override
   public boolean upload(SolrInputDocument doc) {
-    AddUpdateCommand command = new AddUpdateCommand(req);// accesses schema !
-    command.solrDoc = doc;
-    Slice slice = destDocColl.getRouter().getTargetSlice(command.getIndexedIdStr(), doc, null, req.getParams(), destDocColl);
     try {
+      AddUpdateCommand command = new AddUpdateCommand(req);// accesses schema !
+      command.solrDoc = doc;
+      Slice slice = destDocColl.getRouter().getTargetSlice(command.getIndexedIdStr(), doc, null, req.getParams(), destDocColl);
       SolrCmdDistributor.StdNode shardLeaderNode = new SolrCmdDistributor.StdNode(new ZkCoreNodeProps(slice.getLeader()), destColl, slice.getName());
       ModifiableSolrParams commitWithinParam = new ModifiableSolrParams(Map.of("commitWithin", new String[]{Integer.toString(commitWithin)}));
       solrCmdDistributor.distribAdd(command, Collections.singletonList(shardLeaderNode), commitWithinParam);
@@ -138,6 +90,61 @@ public class SolrCloudWriter extends SolrWriter /*weird but it seems it's worth 
     } catch (Exception e) {
       log.error("Error creating document : " + doc, e);
       return false;
+    }
+  }
+
+
+  @Override
+  public void deleteDoc(Object key) {
+    syncThenUpdateLog(u -> u.deleteById(key.toString()));
+  }
+
+
+  @Override
+  public void deleteByQuery(String q) {
+    syncThenUpdateLog(u -> u.deleteByQuery(q));
+  }
+
+
+  @Override
+  public void commit(boolean optimize) {
+    AbstractUpdateRequest.ACTION action = optimize ? UpdateRequest.ACTION.OPTIMIZE : UpdateRequest.ACTION.COMMIT;
+    syncThenUpdateLog(req -> req.setAction(action, true, true));
+  }
+
+  @Override
+  public void rollback() {
+    syncThenUpdateLog(AbstractUpdateRequest::rollback);
+  }
+
+  @Override
+  public void doDeleteAll() {
+    syncThenUpdateThrow(u -> u.deleteByQuery("*:*"));
+  }
+
+  protected void syncThenUpdate(Consumer<UpdateRequest> customizer) throws Exception {
+    solrCmdDistributor.blockAndDoRetries();
+    UpdateRequest ureq = new UpdateRequest();
+    String baseUrl = destDocColl.getActiveSlicesArr()[0].getLeader().getBaseUrl();
+    ureq.setBasePath(baseUrl);
+    customizer.accept(ureq);
+    ureq.process(updateClient, destColl);
+  }
+
+  protected void syncThenUpdateLog(Consumer<UpdateRequest> customizer) {
+    try {
+      syncThenUpdate(customizer);
+    } catch (Exception e) {
+      log.error("Error during import: ", e);
+    }
+  }
+
+  protected void syncThenUpdateThrow(Consumer<UpdateRequest> customizer) {
+    try {
+      syncThenUpdate(customizer);
+    } catch (Exception exception) {
+      throw new DataImportHandlerException(DataImportHandlerException.SEVERE,
+              "Error importing: ", exception);
     }
   }
 }

@@ -26,7 +26,6 @@ import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.client.solrj.response.SimpleSolrResponse;
 import org.apache.solr.cloud.SolrCloudTestCase;
 import org.apache.solr.common.params.MapSolrParams;
-import org.apache.solr.common.util.NamedList;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -52,7 +51,7 @@ public class TestAnotherCollectionWriter extends SolrCloudTestCase {
     CollectionAdminRequest.createCollection(DATA_COLLECTION, "_default", 1, 1)
             .setPerReplicaState(SolrCloudTestCase.USE_PER_REPLICA_STATE)
             .process(cluster.getSolrClient());
-    // here just mimic coordinator node flow
+    // here I just mimic coordinator node flow
     CollectionAdminRequest.createCollection(COORD_COLLECTION, "_default", 1, 1)
             .setPerReplicaState(SolrCloudTestCase.USE_PER_REPLICA_STATE)
             .process(cluster.getSolrClient());
@@ -108,7 +107,7 @@ public class TestAnotherCollectionWriter extends SolrCloudTestCase {
     dih.withContent(xml.getBytes(StandardCharsets.UTF_8), "application/json");
     SimpleSolrResponse dihRsp = dih.process(cluster.getSolrClient(), COORD_COLLECTION);
 
-    assertEquals(0, ((NamedList<Object>) dihRsp.getResponse().get("responseHeader")).get("status"));
+    assertEquals(0, dihRsp.getResponse().findRecursive("responseHeader","status"));
 
     assertDocCount(expectedAfterImport);
   }

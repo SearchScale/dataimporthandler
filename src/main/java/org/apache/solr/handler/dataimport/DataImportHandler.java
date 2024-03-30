@@ -265,17 +265,7 @@ public class DataImportHandler extends RequestHandlerBase implements
             "Unable to load Writer implementation:" + writerClassStr, e);
       }
     } else {
-      return new SolrWriter(processor, req) {
-        @Override
-        public boolean upload(SolrInputDocument document) {
-          try {
-            return super.upload(document);
-          } catch (RuntimeException e) {
-            log.error("Exception while adding: " + document, e);
-            return false;
-          }
-        }
-      };
+      return new SolrWriter(processor, req);
     }
   }
 
