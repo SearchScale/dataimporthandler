@@ -17,8 +17,8 @@
 package org.apache.solr.handler.dataimport;
 
 import org.apache.solr.client.solrj.impl.Http2SolrClient;
+import org.apache.solr.client.solrj.request.AbstractUpdateRequest;
 import org.apache.solr.client.solrj.request.UpdateRequest;
-import org.apache.solr.cloud.CloudDescriptor;
 import org.apache.solr.cloud.ZkController;
 import org.apache.solr.common.SolrException;
 import org.apache.solr.common.SolrInputDocument;
@@ -38,127 +38,106 @@ import org.slf4j.LoggerFactory;
 import java.lang.invoke.MethodHandles;
 import java.util.Collections;
 import java.util.Map;
+import java.util.function.Consumer;
 
 public class SolrCloudWriter extends SolrWriter /*weird but it seems it's worth to inherit finish */ {
 
-    private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
+  private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-    public static final String DST_COLL_PARAM = "destination-collection";
-    private final Http2SolrClient updateClient;
-    private final String destColl;
-    private final DocCollection destDocColl;
-    private final SolrCmdDistributor solrCmdDistributor;
+  public static final String DST_COLL_PARAM = "destination-collection";
+  private final Http2SolrClient updateClient;
+  private final String destColl;
+  private final DocCollection destDocColl;
+  private final SolrCmdDistributor solrCmdDistributor;
 
-    public SolrCloudWriter(UpdateRequestProcessor processor, SolrQueryRequest req) {
-        super(processor, req);
-        updateClient = req.getCoreContainer().getUpdateShardHandler().getUpdateOnlyHttpClient();
-        destColl = req.getParams().get(DST_COLL_PARAM);
-        if (destColl == null) {
-            throw new SolrException(SolrException.ErrorCode.BAD_REQUEST, SolrWriter.class.getCanonicalName() + " requires " + DST_COLL_PARAM);
-        }
-        CoreContainer cc = req.getCoreContainer();
-        //CloudDescriptor cloudDesc = req.getCore().getCoreDescriptor().getCloudDescriptor();
-        ZkController zkController = cc.getZkController();
-        ClusterState clusterState = zkController.getClusterState();
-        destDocColl = clusterState.getCollection(destColl); // existential assert here
-
-        solrCmdDistributor = new SolrCmdDistributor(req.getCoreContainer().getUpdateShardHandler());
+  public SolrCloudWriter(UpdateRequestProcessor processor, SolrQueryRequest req) {
+    super(processor, req);
+    updateClient = req.getCoreContainer().getUpdateShardHandler().getUpdateOnlyHttpClient();
+    destColl = req.getParams().get(DST_COLL_PARAM);
+    if (destColl == null) {
+      throw new SolrException(SolrException.ErrorCode.BAD_REQUEST, SolrWriter.class.getCanonicalName() + " requires " + DST_COLL_PARAM);
     }
+    CoreContainer cc = req.getCoreContainer();
+    ZkController zkController = cc.getZkController();
+    ClusterState clusterState = zkController.getClusterState();
+    destDocColl = clusterState.getCollection(destColl);
 
-    @Override
-    public void commit(boolean optimize) {
-        try {
-            // can;t manage to commit via SolrCmdDistributor
-            // List<SolrCmdDistributor.Node> collectionUrls = getCollectionUrls(destDocColl, EnumSet.of(Replica.Type.TLOG, Replica.Type.NRT), true);
-            solrCmdDistributor.blockAndDoRetries();//distribCommit(commit, collectionUrls, new ModifiableSolrParams());
-            UpdateRequest cmt = updateAnyLeader();
-            cmt.setAction(optimize ? UpdateRequest.ACTION.OPTIMIZE : UpdateRequest.ACTION.COMMIT, true, true);
-            cmt.process(updateClient, destColl);
-        } catch (Exception e) {
-            log.warn("Error commit back: ", e);
-        }
+    solrCmdDistributor = new SolrCmdDistributor(req.getCoreContainer().getUpdateShardHandler());
+  }
+
+  protected Exception syncThenUpdate(Consumer<UpdateRequest> customizer) {
+    try {
+      solrCmdDistributor.blockAndDoRetries();
+      UpdateRequest cmt = updateAnyLeader();
+      customizer.accept(cmt);
+      cmt.process(updateClient, destColl);
+    } catch (Exception e) {
+      log.error("Error during import: ", e);
+      return e;
     }
+    return null;
+  }
 
-    private UpdateRequest updateAnyLeader() {
-        UpdateRequest cmt = new UpdateRequest();
-        String baseUrl = destDocColl.getActiveSlicesArr()[0].getLeader().getBaseUrl();
-        cmt.setBasePath(baseUrl);
-        return cmt;
+  @Override
+  public void commit(boolean optimize) {
+    AbstractUpdateRequest.ACTION action = optimize ? UpdateRequest.ACTION.OPTIMIZE : UpdateRequest.ACTION.COMMIT;
+    syncThenUpdate(req -> req.setAction(action, true, true));
+  }
+
+  private UpdateRequest updateAnyLeader() {
+    UpdateRequest cmt = new UpdateRequest();
+    String baseUrl = destDocColl.getActiveSlicesArr()[0].getLeader().getBaseUrl();
+    cmt.setBasePath(baseUrl);
+    return cmt;
+  }
+
+
+  @Override
+  public void close() {
+    try {
+      super.close(); // some legacy housekeeping
+    } finally {
+      solrCmdDistributor.close();
     }
+  }
 
+  @Override
+  public void rollback() {
+    syncThenUpdate(AbstractUpdateRequest::rollback);
+  }
 
-    @Override
-    public void close() {
-        try {
-            super.close(); // some legacy housekeeping
-        } finally {
-            solrCmdDistributor.close();
-        }
+  @Override
+  public void deleteByQuery(String q) {
+    syncThenUpdate(u -> u.deleteByQuery(q));
+  }
+
+  @Override
+  public void doDeleteAll() {
+    Exception exception = syncThenUpdate(u -> u.deleteByQuery("*:*"));
+    if (exception != null) {
+      throw new DataImportHandlerException(DataImportHandlerException.SEVERE,
+              "Error deleting all docs : ", exception);
     }
+  }
 
-    @Override
-    public void rollback() {
-        try {
-            solrCmdDistributor.blockAndDoRetries();// but i'd rather nuke'em
-            UpdateRequest cmt = updateAnyLeader();
-            cmt.rollback();
-            cmt.process(updateClient, destColl);
-        } catch (Exception e) {
-            log.warn("Error rolling back: ", e);
-        }
-    }
+  @Override
+  public void deleteDoc(Object key) {
+    syncThenUpdate(u -> u.deleteById(key.toString()));
+  }
 
-    @Override
-    public void deleteByQuery(String q) {
-        try {
-            //updateClient.deleteByQuery(destColl, q, commitWithin);
-            solrCmdDistributor.blockAndDoRetries();
-            UpdateRequest cmt = updateAnyLeader();
-            cmt.deleteByQuery(q); // TODO pass commitWithin
-            cmt.process(updateClient, destColl);
-        } catch (Exception e) {
-            log.warn("Error deleting by: " + q, e);
-        }
+  @Override
+  public boolean upload(SolrInputDocument doc) {
+    AddUpdateCommand command = new AddUpdateCommand(req);// accesses schema !
+    command.solrDoc = doc;
+    Slice slice = destDocColl.getRouter().getTargetSlice(command.getIndexedIdStr(), doc, null, req.getParams(), destDocColl);
+    try {
+      SolrCmdDistributor.StdNode shardLeaderNode = new SolrCmdDistributor.StdNode(new ZkCoreNodeProps(slice.getLeader()), destColl, slice.getName());
+      ModifiableSolrParams commitWithinParam = new ModifiableSolrParams(Map.of("commitWithin", new String[]{Integer.toString(commitWithin)}));
+      solrCmdDistributor.distribAdd(command, Collections.singletonList(shardLeaderNode), commitWithinParam);
+      return true;
+    } catch (Exception e) {
+      log.error("Error creating document : " + doc, e);
+      return false;
     }
-
-    @Override
-    public void doDeleteAll() {
-        try {
-            solrCmdDistributor.blockAndDoRetries();// but i'd rather nuke'em
-            UpdateRequest cmt = updateAnyLeader();
-            cmt.deleteByQuery("*:*"); // TODO pass commitWithin
-            cmt.process(updateClient, destColl);
-        } catch (Exception e) {
-            log.warn("Error deleting all docs : ", e);
-        }
-    }
-
-    @Override
-    public void deleteDoc(Object key) {
-        try {
-            updateClient.deleteById(destColl, key.toString(), commitWithin);
-            solrCmdDistributor.blockAndDoRetries();
-            UpdateRequest cmt = updateAnyLeader();
-            cmt.deleteById(key.toString()); // TODO pass commitWithin
-            cmt.process(updateClient, destColl);
-        } catch (Exception e) {
-            log.warn("Error deleting document : " + key, e);
-        }
-    }
-
-    @Override
-    public boolean upload(SolrInputDocument doc) {
-        AddUpdateCommand command = new AddUpdateCommand(req);// accesses schema !
-        command.solrDoc = doc;
-        Slice slice = destDocColl.getRouter().getTargetSlice(command.getIndexedIdStr(), doc, null, req.getParams(), destDocColl);
-        try {
-            SolrCmdDistributor.StdNode shardLeaderNode = new SolrCmdDistributor.StdNode(new ZkCoreNodeProps(slice.getLeader()), destColl, slice.getName());
-            ModifiableSolrParams commitWithinParam = new ModifiableSolrParams(Map.of("commitWithin", new String[]{Integer.toString(commitWithin)}));
-            solrCmdDistributor.distribAdd(command, Collections.singletonList(shardLeaderNode), commitWithinParam);
-            return true;
-        } catch (Exception e) {
-            log.warn("Error creating document : " + doc, e);
-            return false;
-        }
-    }
+  }
 }
