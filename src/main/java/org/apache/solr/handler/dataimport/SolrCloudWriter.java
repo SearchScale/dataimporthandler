@@ -84,7 +84,7 @@ public class SolrCloudWriter extends SolrWriter { //not sure about ascendant
       command.solrDoc = doc;
       Slice slice = destDocColl.getRouter().getTargetSlice(command.getIndexedIdStr(), doc, null, req.getParams(), destDocColl);
       SolrCmdDistributor.StdNode shardLeaderNode = new SolrCmdDistributor.StdNode(new ZkCoreNodeProps(slice.getLeader()), destColl, slice.getName());
-      ModifiableSolrParams commitWithinParam = new ModifiableSolrParams(Map.of("commitWithin", new String[]{Integer.toString(commitWithin)}));
+      ModifiableSolrParams commitWithinParam =  new ModifiableSolrParams(commitWithin >= 0 ? Map.of("commitWithin", new String[]{Integer.toString(commitWithin)}):Map.of());
       solrCmdDistributor.distribAdd(command, Collections.singletonList(shardLeaderNode), commitWithinParam);
       return true;
     } catch (Exception e) {
@@ -125,8 +125,12 @@ public class SolrCloudWriter extends SolrWriter { //not sure about ascendant
   protected void syncThenUpdate(Consumer<UpdateRequest> customizer) throws Exception {
     solrCmdDistributor.blockAndDoRetries();
     UpdateRequest ureq = new UpdateRequest();
+    // otherwise I've got
+    // Destination node is not provided!
+    //        at org.apache.solr.client.solrj.impl.Http2SolrClient.unwrapV2Request(Http2SolrClient.java:638)
     String baseUrl = destDocColl.getActiveSlicesArr()[0].getLeader().getBaseUrl();
     ureq.setBasePath(baseUrl);
+
     customizer.accept(ureq);
     ureq.process(updateClient, destColl);
   }
