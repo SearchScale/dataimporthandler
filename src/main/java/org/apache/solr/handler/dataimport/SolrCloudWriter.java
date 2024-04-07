@@ -46,7 +46,7 @@ public class SolrCloudWriter extends SolrWriter { //not sure about ascendant
 
   private static final Logger log = LoggerFactory.getLogger(MethodHandles.lookup().lookupClass());
 
-  public static final String DST_COLL_PARAM = "destination-collection";
+  public static final String DST_COLL_PARAM = "destinationCollection";
   private final Http2SolrClient updateClient;
   private final String destColl;
   private final DocCollection destDocColl;

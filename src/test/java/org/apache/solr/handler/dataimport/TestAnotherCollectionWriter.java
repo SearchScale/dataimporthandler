@@ -99,7 +99,7 @@ public class TestAnotherCollectionWriter extends SolrCloudTestCase {
   private static void dataImport(MapSolrParams commandParam, int expectedAfterImport) throws SolrServerException, IOException {
     commandParam.getMap().putAll(Map.of("command", "full-import",
             "synchronous", "true",
-            "destination-collection", DATA_COLLECTION,
+            "destinationCollection", DATA_COLLECTION,
             "writerImpl", "SolrCloudWriter"
     ));
     GenericSolrRequest dih = new GenericSolrRequest(SolrRequest.METHOD.POST, "/dataimport",
