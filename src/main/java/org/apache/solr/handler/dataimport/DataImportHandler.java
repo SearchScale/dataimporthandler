@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.solr.common.SolrException;
-import org.apache.solr.common.SolrInputDocument;
 import org.apache.solr.common.params.CommonParams;
 import org.apache.solr.common.params.MapSolrParams;
 import org.apache.solr.common.params.ModifiableSolrParams;
@@ -265,17 +264,7 @@ public class DataImportHandler extends RequestHandlerBase implements
             "Unable to load Writer implementation:" + writerClassStr, e);
       }
     } else {
-      return new SolrWriter(processor, req) {
-        @Override
-        public boolean upload(SolrInputDocument document) {
-          try {
-            return super.upload(document);
-          } catch (RuntimeException e) {
-            log.error("Exception while adding: " + document, e);
-            return false;
-          }
-        }
-      };
+      return new SolrWriter(processor, req);
     }
   }
 

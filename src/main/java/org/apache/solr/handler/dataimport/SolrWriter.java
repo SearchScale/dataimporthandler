@@ -45,7 +45,7 @@ public class SolrWriter extends DIHWriterBase implements DIHWriter {
   public static final String LAST_INDEX_KEY = "last_index_time";
 
   private final UpdateRequestProcessor processor;
-  private final int commitWithin;
+  protected final int commitWithin;
   
   SolrQueryRequest req;
 
@@ -79,10 +79,9 @@ public class SolrWriter extends DIHWriterBase implements DIHWriter {
       command.commitWithin = commitWithin;
       processor.processAdd(command);
     } catch (Exception e) {
-      log.warn("Error creating document : " + d, e);
+      log.error("Error creating document : " + d, e);
       return false;
     }
-
     return true;
   }
   
@@ -94,7 +93,7 @@ public class SolrWriter extends DIHWriterBase implements DIHWriter {
       delCmd.setId(id.toString());
       processor.processDelete(delCmd);
     } catch (IOException e) {
-      log.error("Exception while deleteing: " + id, e);
+      log.error("Exception while deleting: " + id, e);
     }
   }
 
