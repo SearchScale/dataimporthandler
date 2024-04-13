@@ -60,6 +60,55 @@ The success of this project relies on contributions from the broader community t
 
     `curl "http://localhost:8983/solr/products/select?q=*:*"`
 
+### Use DIH to import from Snowflake into Solr
+Configurations 
+1. solr-security-policy : Following permissions should be configured in solr for the Snowflake JDBC driver to be accessible at runtime. The security config file is under /solr/server/etc/security.policy 
+
+```
+permission java.security.SecurityPermission "putProviderProperty.BC";
+permission java.io.FilePermission "/home/ubuntu/ec2user/caches/Snowflake", "read,write,delete";
+permission java.io.FilePermission "/home/ubuntu/ec2user/caches/Snowflake/*", "read,write,delete";
+```
+2. Data Config 
+Snowflake [JDBC Driver](https://docs.snowflake.com/en/developer-guide/jdbc/jdbc)
+
+```
+<dataConfig>
+        <dataSource type="JdbcDataSource" driver="net.snowflake.client.jdbc.SnowflakeDriver" url="jdbc:snowflake://host:443?db=<>;warehouse=<>;schema=<>;role=<>;account=<>" user="<>" password="<>">
+        </dataSource>
+        <document>
+                <entity name="table_name" query="select id, name from table_name">
+                        <field column="id" name="id" ></field>
+                        <field column="name" name="name" ></field>
+                </entity>
+        </document>
+</dataConfig>
+```
+* Replace the "driver" url with the host, port, database schema and user credentials. 
+
+* The password can to be encrypted as per the [docs](https://solr.apache.org/guide/8_6/uploading-structured-data-store-data-with-the-data-import-handler.html#encrypting-a-database-password)
+
+* Use explicit (non-dynamic) fields in Solr schema, that need to be mapped to snowflake.
+
+* Partial updates are not supported by default. Use [script processor](https://solr.apache.org/guide/8_6/uploading-structured-data-store-data-with-the-data-import-handler.html#the-scripttransformer) to implement partial updates. Add the attribute transformer="script:DeltaIndexTransformer" to the entity of the DIH. For example :
+```
+ <script><![CDATA[
+                function DeltaIndexTransformer(row) {
+                    row.keySet().forEach(function (field) {
+                        if (field != 'id') {
+                            value = row.get(field);
+                            row.put(field, {
+                                'set': value,
+                            });
+                        }
+                    });
+                    return row;
+                }
+                ]]></script>
+```
+
+
+
 ## Contributing
 
 The source code for DIH versions that are compatible with Solr 8.x are in branch_8x branch (branch_9x for Solr 9.x). Please feel free to open issues and/or open pull requests against that branch.
