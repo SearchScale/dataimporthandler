@@ -17,6 +17,7 @@
 package org.apache.solr.handler.dataimport;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.solr.embedded.JettyConfig;
 import org.apache.solr.embedded.JettySolrRunner;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.request.DirectXmlRequest;
@@ -182,6 +183,10 @@ public class TestContentStreamDataSource extends AbstractDataImportHandlerTestCa
     JettySolrRunner jetty = new JettySolrRunner(instance.getHomeDir(), nodeProperties, buildJettyConfig("/solr"));
     jetty.start();
     return jetty;
+  }
+
+  private static JettyConfig buildJettyConfig(String context) {
+    return JettyConfig.builder().setContext(context).stopAtShutdown(true).build();
   }
 
   static String xml = "<root>\n"

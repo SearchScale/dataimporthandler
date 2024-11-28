@@ -32,6 +32,7 @@ import java.util.Properties;
 import org.apache.commons.io.FileUtils;
 import org.apache.lucene.util.IOUtils;
 import org.apache.solr.client.solrj.SolrServerException;
+import org.apache.solr.embedded.JettyConfig;
 import org.apache.solr.embedded.JettySolrRunner;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.common.SolrInputDocument;
@@ -369,6 +370,10 @@ public class TestSolrEntityProcessorEndToEnd extends AbstractDataImportHandlerTe
     JettySolrRunner jetty = new JettySolrRunner(instance.getHomeDir(), nodeProperties, buildJettyConfig("/solr"));
     jetty.start();
     return jetty;
+  }
+
+  private static JettyConfig buildJettyConfig(String context) {
+    return JettyConfig.builder().setContext(context).stopAtShutdown(true).build();
   }
 
 }
