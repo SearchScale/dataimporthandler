@@ -113,6 +113,14 @@ Snowflake [JDBC Driver](https://docs.snowflake.com/en/developer-guide/jdbc/jdbc)
 
 The source code for DIH versions that are compatible with Solr 8.x are in branch_8x branch (branch_9x for Solr 9.x). Please feel free to open issues and/or open pull requests against that branch.
 
+### Releases
+
+In order to upgrade the support for a newer Solr version, you need write access to this repository and should follow these steps:
+
+* Raise and merge a PR to update the Solr version in the pom.xml file. Make sure `mvn clean compile test` works fine.
+* Push a tag for the released version. For example: `git tag v9.6.1 -a` and `git push origin --tags`
+* Observe the Actions tab to see the release artifacts being built.
+
 ## Known Issues
 
 * Only MariaDB connector supported out-of-the-box right now. The connectors to be used need to be shipped as part of this package, and currently only MariaDB connector is shipped.
