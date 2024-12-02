@@ -359,6 +359,57 @@
             "RH-HANDLER-PATH": "/dataimport"
           }
         }
+      },
+      {
+        "version": "9.7.0",
+        "date": "2024-12-02",
+        "artifacts": [
+          {
+            "url": "https://github.com/SearchScale/dataimporthandler/releases/download/v9.7.0/data-import-handler-9.7.0.jar",
+            "sig": "t4qeaYVBNrAvT1PYRg3QHb6ySoRZXzw9Og5dOlnvqw9QdfYkGcVflADGUndCfKxtGTdLHuGS25g6YbaiXIlu0g=="
+          },
+          {
+            "url": "https://github.com/SearchScale/dataimporthandler/releases/download/v9.7.0/mariadb-java-client-2.6.0.jar",
+            "sig": "SfYkFEkpqNfytOeGYNTSB0VD1sNLvTFQR9oCRv+e2y6GzawaZHBGo+9nKrZJ/4MUDVxQLfOiyaEJyQOI8Y+L7A=="
+          }
+        ],
+        "manifest": {
+          "version-constraint": "9.7.0",
+          "plugins": [
+            {
+              "name": "request-handler",
+              "setup-command": {
+                "path": "/api/collections/${collection}/config",
+                "payload": {
+                  "add-requesthandler": {
+                    "name": "${RH-HANDLER-PATH}",
+                    "class": "data-import-handler:org.apache.solr.handler.dataimport.DataImportHandler",
+                    "defaults": {
+                      "config": "data-config.xml"
+                    }
+                  }
+                },
+                "method": "POST"
+              },
+              "uninstall-command": {
+                "path": "/api/collections/${collection}/config",
+                "payload": {
+                  "delete-requesthandler": "${RH-HANDLER-PATH}"
+                },
+                "method": "POST"
+              },
+              "verify-command": {
+                "path": "/api/collections/${collection}/config/requestHandler?componentName=${RH-HANDLER-PATH}&meta=true",
+                "method": "GET",
+                "condition": "$[config].[requestHandler].[HANDLER-PATH].[_packageinfo_].[version]",
+                "expected": "${package-version}"
+              }
+            }
+          ],
+          "parameter-defaults": {
+            "RH-HANDLER-PATH": "/dataimport"
+          }
+        }
       }
     ]
   }
