@@ -89,7 +89,7 @@ jobs:
                   "verify-command": {
                     "path": "/api/collections/${collection}/config/requestHandler?componentName=${RH-HANDLER-PATH}&meta=true",
                     "method": "GET",
-                    "condition": "$['config'].['requestHandler'].['${RH-HANDLER-PATH}'].['_packageinfo_'].['version']",
+                    "condition": "$['"'"'config'"'"'].['"'"'requestHandler'"'"'].['"'"'${RH-HANDLER-PATH}'"'"'].['"'"'_packageinfo_'"'"'].['"'"'version'"'"']",
                     "expected": "${package-version}"
                   }
                 }
